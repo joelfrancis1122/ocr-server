@@ -1,22 +1,28 @@
-
-import express from "express"
+import express from "express";
 import cors, { CorsOptions } from "cors";
 import router from "./routes/ocrRoutes";
-
-const app = express()
 import dotenv from "dotenv";
-dotenv.config();
-const PORT = process.env.PORT || 3000
-const corsOptions: CorsOptions = {
-  origin: ["process.env.FRONTEND_URL","http://localhost:7000","https://ocrclient.vercel.app/"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-app.use(cors(corsOptions))
 
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// CORS options for both dev and prod
+const corsOptions: CorsOptions = {
+  origin: [
+    process.env.FRONTEND_URL_PROD || "https://ocrclient.vercel.app", 
+    process.env.FRONTEND_URL_DEV || "http://localhost:5173"          
+  ],
+  credentials: true,
+  methods: ["GET","POST","PUT","DELETE","OPTIONS","PATCH"],
+  allowedHeaders: ["Content-Type","Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json()); // make sure JSON body parsing works
 app.use("/api", router);
 
-app.listen(PORT,()=>{
-    console.log(`Server is running on http://localhost:${PORT}`)
-})
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
