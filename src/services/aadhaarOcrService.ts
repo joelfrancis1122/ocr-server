@@ -8,7 +8,7 @@ export class AadhaarOcrService {
     this.repository = new TesseractAadhaarOcrRepository();
   }
 
-  async processAadhaar(frontBuffer: Buffer, backBuffer: Buffer): Promise<AadhaarOcrResult> {
+  async processAadhaar(frontBuffer: Buffer, backBuffer: Buffer): Promise<AadhaarOcrResult> { 
     return this.repository.processAadhaar(frontBuffer, backBuffer);
   }
 }
