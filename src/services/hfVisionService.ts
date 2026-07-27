@@ -1,25 +1,36 @@
-import { AutoProcessor, AutoModelForImageTextToText, RawImage } from "@huggingface/transformers";
+import { HfInference } from "@huggingface/inference";
 import sharp from "sharp";
 import { IVisionModel } from "../interfaces/extraction.interface";
 
 /**
- * Florence-2 AI Vision Model Service.
+ * Florence-2 AI Vision Model Service via API.
  * Implements IVisionModel interface.
  */
 export class HuggingFaceVisionService implements IVisionModel {
-  private modelPromise = AutoModelForImageTextToText.from_pretrained("onnx-community/Florence-2-base-ft", { dtype: "q8" });
-  private processorPromise = AutoProcessor.from_pretrained("onnx-community/Florence-2-base-ft");
+  private hf: HfInference;
+
+  constructor() {
+    this.hf = new HfInference(process.env.HF_TOKEN);
+  }
 
   async extractText(buffer: Buffer, prompt: string): Promise<{ rawText: string }> {
     try {
-      const [model, processor] = await Promise.all([this.modelPromise, this.processorPromise]);
-      const enhancedBuffer = await sharp(buffer).resize(1600).normalize().sharpen().toBuffer();
-      const image = await RawImage.read(new Blob([new Uint8Array(enhancedBuffer)]));
+      const enhancedBuffer = await sharp(buffer).resize(1600).normalize().sharpen().jpeg().toBuffer();
+      const blob = new Blob([new Uint8Array(enhancedBuffer)], { type: 'image/jpeg' });
 
-      const inputs = await processor(image, prompt);
-      const outputs = await model.generate({ ...inputs, max_new_tokens: 1024 });
-      const decoded = processor.batch_decode(outputs as any, { skip_special_tokens: false });
-      const rawText = (decoded?.[0] || "").replace(/<\/s>/g, "").trim();
+      // Call Hugging Face API
+      const response = await this.hf.request({
+        model: "microsoft/Florence-2-base-ft",
+        inputs: blob,
+        parameters: { prompt }
+      });
+      
+      let rawText = "";
+      if (Array.isArray(response) && response.length > 0) {
+        rawText = response[0].generated_text || "";
+      } else if (response && (response as any).generated_text) {
+        rawText = (response as any).generated_text;
+      }
 
       return { rawText };
     } catch (error) {

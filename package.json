@@ -1,10 +1,11 @@
 {
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
+    "@huggingface/inference": "^4.13.23",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "multer": "^2.0.2",
+    "sharp": "^0.35.3",
     "zxing-wasm": "^3.1.2"
   },
   "name": "server",
@@ -24,6 +25,7 @@
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.5.2",
+    "@types/sharp": "^0.31.1",
     "nodemon": "^3.1.10",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"
