@@ -1,36 +1,28 @@
-import { HfInference } from "@huggingface/inference";
+import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { IVisionModel } from "../interfaces/extraction.interface";
 
 /**
- * Florence-2 AI Vision Model Service via API.
+ * Tesseract.js Vision Model Service.
  * Implements IVisionModel interface.
  */
 export class HuggingFaceVisionService implements IVisionModel {
-  private hf: HfInference;
-
-  constructor() {
-    this.hf = new HfInference(process.env.HF_TOKEN);
-  }
-
   async extractText(buffer: Buffer, prompt: string): Promise<{ rawText: string }> {
     try {
-      const enhancedBuffer = await sharp(buffer).resize(1600).normalize().sharpen().jpeg().toBuffer();
-      const blob = new Blob([new Uint8Array(enhancedBuffer)], { type: 'image/jpeg' });
+      // Preprocess image for OCR: grayscale, normalize, and sharpen
+      const enhancedBuffer = await sharp(buffer)
+        .resize({ width: 1600 })
+        .grayscale()
+        .normalize()
+        .sharpen()
+        .png()
+        .toBuffer();
 
-      // Call Hugging Face API
-      const response = await this.hf.request({
-        model: "microsoft/Florence-2-base-ft",
-        inputs: blob,
-        parameters: { prompt }
-      });
+      // Run Tesseract OCR
+      const result = await Tesseract.recognize(enhancedBuffer, 'eng');
       
-      let rawText = "";
-      if (Array.isArray(response) && response.length > 0) {
-        rawText = response[0].generated_text || "";
-      } else if (response && (response as any).generated_text) {
-        rawText = (response as any).generated_text;
-      }
+      const rawText = result.data.text || "";
+      console.log("OCR Extracted Text:", rawText.substring(0, 100) + "..."); // Log first 100 chars
 
       return { rawText };
     } catch (error) {
